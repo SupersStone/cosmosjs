@@ -1,0 +1,2 @@
+# cosmosjs
+cosmos-js
