@@ -49,22 +49,76 @@ function Stargate() {
 	}, [address, client]);
 
 	// 创建账户 Todo
-	const createAccount = async () => {};
+	const createAccount = async () => {
+		// 创建助记词
+		const myAccount: any = await DirectSecp256k1HdWallet.generate(12,
+			{
+				prefix:"osmo",
+			})
+		localStorage.setItem("mnemonic", myAccount);
+		console.log("myaccount is:", myAccount);
+		setMnemonic(myAccount?.secret.data)
+	};
 
 	// 通过助记词钱包获得地址 Todo
-	const getAddressByMnemonic = async () => {}
+	const getAddressByMnemonic = async () => {
+		// 通过助记词导出地址
+		const wallet = await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, {
+			prefix: "osmo",
+		})
+		const [account] = await wallet.getAccounts();
+		console.log("account is:", account);
+		setAddress(account.address);
+	}
 
 	// 余额查询 Todo
-	const getBalance = async () => {};
+	const getBalance = async () => {
+		// 通过地址查询余额
+		const balance = await client.getBalance(address, "uosmo");
+		console.log("balance is:", balance);
+		setBalance(balance);
+
+		// 获取账户信息
+		const _account = await client.getAccount(address);
+		setAccount(_account);
+
+		// 获取账户的sequence
+		const _sequence = await client?.getSequence(address);
+		setSequence(_sequence);
+
+		// 获取账户的所有余额
+		const _allBalance = await client?.getAllBalances(address);
+		setAllBalances(_allBalance);
+
+
+	};
 
 	// strageClient 基础 api 使用 Todo
-	const getOthers = async () => {};
+	const getOthers = async () => {
+		console.log(" others address is:", address);
+		const _chainid = await client.getChainId();
+		setChainId(_chainid);
+
+		const _height = await client.getHeight();
+		setHeight(_height);
+
+		const _block = await client?.getBlock();
+		setBlock(_block);
+
+	};
 
 	// connect client Todo
-	const connect = async () => {};
+	const connect = async () => {
+		// 创建client
+		const client = await StargateClient.connect(chain.rpc);
+		setClient(client);
+	};
 
 	// disconnect client Todo
-	const disConnect = async () => {};
+	const disConnect = async () => {
+		// 断开client
+		client?.disconnect();
+	};
 
 	return (
 		<div className="stargate">

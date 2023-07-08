@@ -1,6 +1,8 @@
 import type { ChainInfo } from "@keplr-wallet/types";
 import React, { useEffect, useState } from "react";
 import osmo from "../config/osmosis";
+import {SigningStargateClient} from "@cosmjs/stargate";
+import {assertIsBroadcastTxSuccess} from "@cosmjs/launchpad";
 
 function Keplr() {
 	const [chain, setChain] = useState<ChainInfo>(osmo);
@@ -28,16 +30,72 @@ function Keplr() {
 	}, [address, client, sendHash]);
 
 	// 连接keplr钱包  Todo
-	const connectWallet = async () => {};
+	const connectWallet = async () => {
+		// 链接keplr钱包
+		const keplr: any = window.keplr;
+		if (!keplr) return;
+		if (!keplr.experimentalSuggestChain) return;
+		const chainId = osmo.chainId;
+		await keplr.experimentalSuggestChain(chain);
+		await keplr.enable(chainId);
+		const offlineSigner = window.getOfflineSigner(chainId);
+		const accounts = await offlineSigner.getAccounts();
+		const userAddress = accounts[0].address;
+		setAddress(userAddress);
+		const client = await SigningStargateClient.connectWithSigner(
+			osmo.rpc,
+			offlineSigner)
+		setClient(client);
+
+	};
 
 	// 余额查询  Todo
-	const getBalances = async () => {};
+	const getBalances = async () => {
+		// 地址余额查询
+		const balance = await client.getBalance(address, "uosmo");
+		setBalance(balance);
+		console.log("getBalances is balance:", balance);
+	};
 
 	// txhash查询  Todo
-	const getTx = async () => {};
+	const getTx = async () => {
+		// txhash查询
+		const tx = await client.getTx(sendHash);
+		setTxRes(tx);
+
+
+	};
 
 	// 转账 Todo
-	const sendToken = async () => {};
+	const sendToken = async () => {
+		// 发送token
+		const fee = {
+			amount: [
+				{
+					denom: "uosmo",
+					amount: "5000",
+				},
+			],
+			gas: "200000",
+		};
+		const result = await client.sendTokens(
+			address,
+			recipent,
+			[{
+				amount: "1000000",
+				denom: "uosmo",
+			}],
+			fee,
+			"test send token"
+		);
+		console.log("sendToken is result:", result.transactionHash);
+		setTx(result.transactionHash);
+
+		assertIsBroadcastTxSuccess(result);
+		setSendHash(result.transactionHash);
+
+
+	};
 
 	return (
 		<div className="keplr">
